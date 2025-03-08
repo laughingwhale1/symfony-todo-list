@@ -91,4 +91,26 @@ final class TaskController extends AbstractController
 
         return $this->responseHelper->json([], Response::HTTP_NO_CONTENT);
     }
+
+
+
+    // GENERATORS EXAMPLE
+    #[Route('/test', name: 'test')]
+    public function test(): Response
+    {
+        $numbers = $this->lazyRange(1, 4000000);
+        for ($i = 0; $i < 2000000; $i++) {
+            $numbers->next();
+        }
+        return $this->render('task/index.html.twig', [
+           'value' => json_encode($numbers->current())
+        ]);
+    }
+
+    private function lazyRange(int $start, int $end): \Generator
+    {
+        for ($i = $start; $i <= $end; $i++) {
+            yield $i;
+        }
+    }
 }
