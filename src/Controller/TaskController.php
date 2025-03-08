@@ -29,10 +29,35 @@ final class TaskController extends AbstractController
         return $this->responseHelper->json($tasks);
     }
 
+    #[Route('/tasks/{id}', name: 'update_task', methods: ['PATCH'])]
+    public function updateTask(Request $request, int $id): Response
+    {
+        $data = json_decode($request->getContent(), true);
+
+        $task = $this->entityManager->getRepository(Task::class)->find($id);
+
+        if (!$task) {
+            throw $this->createNotFoundException('No task found.');
+        }
+
+        $task->setTitle($data['title']);
+
+        $this->entityManager->persist($task);
+        $this->entityManager->flush();
+
+//        $task->setTitle();
+
+        return $this->responseHelper->json($task);
+    }
+
     #[Route('/tasks/{id}', name: 'app_task')]
     public function getById(int $id): Response
     {
         $task = $this->taskRepository->find($id);
+
+        if (!$task) {
+            throw $this->createNotFoundException('No task found.');
+        }
 
         return $this->responseHelper->json($task);
     }
@@ -52,7 +77,7 @@ final class TaskController extends AbstractController
         return $this->responseHelper->json($task, Response::HTTP_CREATED);
     }
 
-    #[Route('/tasks/{id}/delete', name: 'create_task', methods: ['DELETE'])]
+    #[Route('/tasks/{id}/delete', name: 'delete_task', methods: ['DELETE'])]
     public function deleteTask(int $id): Response
     {
         $task = $this->entityManager->getRepository(Task::class)->find($id);
