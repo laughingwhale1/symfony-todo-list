@@ -3,15 +3,18 @@
 namespace App\Controller;
 
 use App\Contracts\IResponseHelper;
+use App\DTO\Task\UpdateTaskDTO;
 use App\Entity\Task;
 use App\Enum\TaskStatusEnum;
 use App\Repository\TaskRepository;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use Nelmio\ApiDocBundle\Attribute\Model;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use OpenApi\Attributes as OA;
 
 final class TaskController extends AbstractController
 {
@@ -21,7 +24,12 @@ final class TaskController extends AbstractController
         private readonly EntityManagerInterface $entityManager
     ) {}
 
-    #[Route('/tasks', name: 'app_task')]
+    #[Route('/api/tasks', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Returns the list of tasks'
+    )]
+    #[OA\Tag(name: 'tasks')]
     public function index(): Response
     {
         $tasks = $this->taskRepository->getAllTasks();
@@ -29,7 +37,11 @@ final class TaskController extends AbstractController
         return $this->responseHelper->json($tasks);
     }
 
-    #[Route('/tasks/{id}', name: 'update_task', methods: ['PATCH'])]
+    #[Route('/api/tasks/{id}', name: 'update_task', methods: ['PATCH'])]
+    #[OA\Tag(name: 'tasks')]
+    #[OA\RequestBody(
+        content: new Model(type: UpdateTaskDTO::class)
+    )]
     public function updateTask(Request $request, int $id): Response
     {
         $data = json_decode($request->getContent(), true);
@@ -50,7 +62,8 @@ final class TaskController extends AbstractController
         return $this->responseHelper->json($task);
     }
 
-    #[Route('/tasks/{id}', name: 'app_task')]
+    #[Route('/api/tasks/{id}', methods: ['GET'])]
+    #[OA\Tag(name: 'tasks')]
     public function getById(int $id): Response
     {
         $task = $this->taskRepository->find($id);
@@ -62,7 +75,8 @@ final class TaskController extends AbstractController
         return $this->responseHelper->json($task);
     }
 
-    #[Route('/tasks', name: 'create_task', methods: ['POST'])]
+    #[Route('/api/tasks', name: 'create_task', methods: ['POST'])]
+    #[OA\Tag(name: 'tasks')]
     public function createTask(Request $request): Response
     {
         $task = new Task();
@@ -77,7 +91,8 @@ final class TaskController extends AbstractController
         return $this->responseHelper->json($task, Response::HTTP_CREATED);
     }
 
-    #[Route('/tasks/{id}/delete', name: 'delete_task', methods: ['DELETE'])]
+    #[Route('/api/tasks/{id}/delete', name: 'delete_task', methods: ['DELETE'])]
+    #[OA\Tag(name: 'tasks')]
     public function deleteTask(int $id): Response
     {
         $task = $this->entityManager->getRepository(Task::class)->find($id);
@@ -90,27 +105,5 @@ final class TaskController extends AbstractController
         $this->entityManager->flush();
 
         return $this->responseHelper->json([], Response::HTTP_NO_CONTENT);
-    }
-
-
-
-    // GENERATORS EXAMPLE
-    #[Route('/test', name: 'test')]
-    public function test(): Response
-    {
-        $numbers = $this->lazyRange(1, 4000000);
-        for ($i = 0; $i < 2000000; $i++) {
-            $numbers->next();
-        }
-        return $this->render('task/index.html.twig', [
-           'value' => json_encode($numbers->current())
-        ]);
-    }
-
-    private function lazyRange(int $start, int $end): \Generator
-    {
-        for ($i = $start; $i <= $end; $i++) {
-            yield $i;
-        }
     }
 }
