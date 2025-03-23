@@ -6,23 +6,26 @@ use App\Contracts\IResponseHelper;
 use App\DTO\Task\UpdateTaskDTO;
 use App\Entity\Task;
 use App\Enum\TaskStatusEnum;
+use App\Exceptions\EntityNotFoundException;
+use App\Helpers\ResponseHelper;
 use App\Repository\TaskRepository;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Nelmio\ApiDocBundle\Attribute\Model;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
+use Symfony\Component\Routing\Annotation\Route;
 
-final class TaskController extends AbstractController
+final class TaskController extends BaseApiController
 {
     public function __construct(
-        private readonly IResponseHelper $responseHelper,
         private readonly TaskRepository $taskRepository,
-        private readonly EntityManagerInterface $entityManager
-    ) {}
+        private readonly EntityManagerInterface $entityManager,
+        private readonly LoggerInterface $logger
+    ) {
+    }
 
     #[Route('/api/tasks', methods: ['GET'])]
     #[OA\Response(
@@ -34,7 +37,7 @@ final class TaskController extends AbstractController
     {
         $tasks = $this->taskRepository->getAllTasks();
 
-        return $this->responseHelper->json($tasks);
+        return $this->apiResponse($tasks);
     }
 
     #[Route('/api/tasks/{id}', name: 'update_task', methods: ['PATCH'])]
@@ -44,35 +47,45 @@ final class TaskController extends AbstractController
     )]
     public function updateTask(Request $request, int $id): Response
     {
-        $data = json_decode($request->getContent(), true);
+        try {
+            $data = json_decode($request->getContent(), true);
 
-        $task = $this->entityManager->getRepository(Task::class)->find($id);
+            $task = $this->entityManager->getRepository(Task::class)->find($id);
 
-        if (!$task) {
-            throw $this->createNotFoundException('No task found.');
+            if (!$task) {
+                throw new EntityNotFoundException('No task found.');
+            }
+
+            $task->setTitle($data['title']);
+
+            $this->entityManager->persist($task);
+            $this->entityManager->flush();
+
+            return $this->apiResponse($task);
+        } catch (\Throwable $throwable) {
+            $this->logger->error($throwable->getMessage(), ['exception' => $throwable]);
+
+            $this->apiResponseError($throwable);
         }
-
-        $task->setTitle($data['title']);
-
-        $this->entityManager->persist($task);
-        $this->entityManager->flush();
-
-//        $task->setTitle();
-
-        return $this->responseHelper->json($task);
     }
 
     #[Route('/api/tasks/{id}', methods: ['GET'])]
     #[OA\Tag(name: 'tasks')]
     public function getById(int $id): Response
     {
-        $task = $this->taskRepository->find($id);
+        try {
+            $task = $this->taskRepository->find($id);
 
-        if (!$task) {
-            throw $this->createNotFoundException('No task found.');
+            if (!$task) {
+                throw new EntityNotFoundException('No task found.');
+            }
+
+            return $this->apiResponse($task);
+        } catch (\Throwable $throwable) {
+            $this->logger->error($throwable->getMessage(), ['exception' => $throwable]);
+
+            $this->apiResponseError($throwable);
         }
-
-        return $this->responseHelper->json($task);
     }
 
     #[Route('/api/tasks', name: 'create_task', methods: ['POST'])]
