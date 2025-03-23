@@ -8,17 +8,18 @@ use App\Exceptions\EntityNotFoundException;
 use App\Exceptions\EntityUpdateFailException;
 use App\Exceptions\LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class BaseApiController extends AbstractController
 {
 
-    public function apiResponse(mixed $data, ?int $status = 200): Response
+    public function apiResponse(mixed $data, ?int $status = 200): JsonResponse
     {
         return $this->json($data, $status);
     }
 
-    public function apiResponseError(\Throwable $throwable): Response
+    public function apiResponseError(\Throwable $throwable): JsonResponse
     {
         $body = [
             'message' => $throwable->getMessage(),

@@ -2,20 +2,21 @@
 
 namespace App\Controller;
 
-use App\Contracts\IResponseHelper;
+use App\DTO\Task\CreateTaskDTO;
 use App\DTO\Task\UpdateTaskDTO;
 use App\Entity\Task;
 use App\Enum\TaskStatusEnum;
 use App\Exceptions\EntityNotFoundException;
-use App\Helpers\ResponseHelper;
 use App\Repository\TaskRepository;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use OpenApi\Attributes as OA;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Annotation\Route;
 
 final class TaskController extends BaseApiController
@@ -33,7 +34,7 @@ final class TaskController extends BaseApiController
         description: 'Returns the list of tasks'
     )]
     #[OA\Tag(name: 'tasks')]
-    public function index(): Response
+    public function index(): JsonResponse
     {
         $tasks = $this->taskRepository->getAllTasks();
 
@@ -45,18 +46,16 @@ final class TaskController extends BaseApiController
     #[OA\RequestBody(
         content: new Model(type: UpdateTaskDTO::class)
     )]
-    public function updateTask(Request $request, int $id): Response
+    public function updateTask(#[MapRequestPayload] UpdateTaskDTO $request, int $id): JsonResponse
     {
         try {
-            $data = json_decode($request->getContent(), true);
-
             $task = $this->entityManager->getRepository(Task::class)->find($id);
 
             if (!$task) {
                 throw new EntityNotFoundException('No task found.');
             }
 
-            $task->setTitle($data['title']);
+            $task->setTitle($request->title);
 
             $this->entityManager->persist($task);
             $this->entityManager->flush();
@@ -71,7 +70,7 @@ final class TaskController extends BaseApiController
 
     #[Route('/api/tasks/{id}', methods: ['GET'])]
     #[OA\Tag(name: 'tasks')]
-    public function getById(int $id): Response
+    public function getById(int $id): JsonResponse
     {
         try {
             $task = $this->taskRepository->find($id);
@@ -89,20 +88,23 @@ final class TaskController extends BaseApiController
     }
 
     #[Route('/api/tasks', name: 'create_task', methods: ['POST'])]
+    #[OA\RequestBody(
+        content: new Model(type: CreateTaskDTO::class)
+    )]
     #[OA\Tag(name: 'tasks')]
-    public function createTask(Request $request): Response
+    public function createTask(#[MapRequestPayload] CreateTaskDTO $request): JsonResponse
     {
         try {
             $task = new Task();
 
-            $task->setTitle('Task 1');
+            $task->setTitle($request->title);
             $task->setStatus(TaskStatusEnum::New);
             $task->setCreatedAt(\DateTimeImmutable::createFromMutable(new DateTime()));
 
             $this->entityManager->persist($task);
             $this->entityManager->flush();
 
-            return $this->apiResponse($task, Response::HTTP_CREATED);
+            return $this->apiResponse(['id' => $task->getId()], Response::HTTP_CREATED);
         } catch (\Throwable $throwable) {
             $this->logger->error($throwable->getMessage(), ['exception' => $throwable]);
 
@@ -112,7 +114,7 @@ final class TaskController extends BaseApiController
 
     #[Route('/api/tasks/{id}/delete', name: 'delete_task', methods: ['DELETE'])]
     #[OA\Tag(name: 'tasks')]
-    public function deleteTask(int $id): Response
+    public function deleteTask(int $id): JsonResponse
     {
         try {
             $task = $this->entityManager->getRepository(Task::class)->find($id);
