@@ -65,7 +65,7 @@ final class TaskController extends BaseApiController
         } catch (\Throwable $throwable) {
             $this->logger->error($throwable->getMessage(), ['exception' => $throwable]);
 
-            $this->apiResponseError($throwable);
+            return $this->apiResponseError($throwable);
         }
     }
 
@@ -84,7 +84,7 @@ final class TaskController extends BaseApiController
         } catch (\Throwable $throwable) {
             $this->logger->error($throwable->getMessage(), ['exception' => $throwable]);
 
-            $this->apiResponseError($throwable);
+            return $this->apiResponseError($throwable);
         }
     }
 
@@ -92,31 +92,43 @@ final class TaskController extends BaseApiController
     #[OA\Tag(name: 'tasks')]
     public function createTask(Request $request): Response
     {
-        $task = new Task();
+        try {
+            $task = new Task();
 
-        $task->setTitle('Task 1');
-        $task->setStatus(TaskStatusEnum::New);
-        $task->setCreatedAt(\DateTimeImmutable::createFromMutable(new DateTime()));
+            $task->setTitle('Task 1');
+            $task->setStatus(TaskStatusEnum::New);
+            $task->setCreatedAt(\DateTimeImmutable::createFromMutable(new DateTime()));
 
-        $this->entityManager->persist($task);
-        $this->entityManager->flush();
+            $this->entityManager->persist($task);
+            $this->entityManager->flush();
 
-        return $this->responseHelper->json($task, Response::HTTP_CREATED);
+            return $this->apiResponse($task, Response::HTTP_CREATED);
+        } catch (\Throwable $throwable) {
+            $this->logger->error($throwable->getMessage(), ['exception' => $throwable]);
+
+            return $this->apiResponseError($throwable);
+        }
     }
 
     #[Route('/api/tasks/{id}/delete', name: 'delete_task', methods: ['DELETE'])]
     #[OA\Tag(name: 'tasks')]
     public function deleteTask(int $id): Response
     {
-        $task = $this->entityManager->getRepository(Task::class)->find($id);
+        try {
+            $task = $this->entityManager->getRepository(Task::class)->find($id);
 
-        if (!$task) {
-            throw $this->createNotFoundException('No task found.');
+            if (!$task) {
+                throw new EntityNotFoundException();
+            }
+
+            $this->entityManager->remove($task);
+            $this->entityManager->flush();
+
+            return $this->apiResponse([], Response::HTTP_NO_CONTENT);
+        } catch (\Throwable $throwable) {
+            $this->logger->error($throwable->getMessage(), ['exception' => $throwable]);
+
+            return $this->apiResponseError($throwable);
         }
-
-        $this->entityManager->remove($task);
-        $this->entityManager->flush();
-
-        return $this->responseHelper->json([], Response::HTTP_NO_CONTENT);
     }
 }
