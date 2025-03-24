@@ -3,6 +3,7 @@
 namespace App\DTO\Task;
 
 
+use App\Enum\TaskStatusEnum;
 use Symfony\Component\Validator\Constraints as Assert;
 use App\DTO\BaseDTO;
 
@@ -12,6 +13,9 @@ class UpdateTaskDTO extends BaseDTO
         #[Assert\NotBlank]
         #[Assert\Type('string')]
         public string $title,
+
+        #[Assert\NotBlank]
+        public TaskStatusEnum $newStatus
     )
     {
 
@@ -21,6 +25,7 @@ class UpdateTaskDTO extends BaseDTO
     {
         return new self(
             title: $data['title'],
+            newStatus: $data['newStatus']
         );
     }
 }

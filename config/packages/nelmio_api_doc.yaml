@@ -4,8 +4,18 @@ nelmio_api_doc:
             title: My App
             description: This is an awesome app!
             version: 1.0.0
-        formats:
-            json: ['application/json']
+        body_format:
+            default_format: json
+
+        components:
+            securitySchemes:
+                Bearer:
+                    type: apiKey
+                    description: 'Value: Bearer {jwt}'
+                    name: Authorization
+                    in: header
+            security:
+                - Bearer: [ ]
 
     areas: # to filter documented areas
         path_patterns:

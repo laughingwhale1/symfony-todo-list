@@ -14,9 +14,9 @@ use Symfony\Component\HttpFoundation\Response;
 class BaseApiController extends AbstractController
 {
 
-    public function apiResponse(mixed $data, ?int $status = 200): JsonResponse
+    public function apiResponse(mixed $data, ?int $status = 200, ?string $message = ''): JsonResponse
     {
-        return $this->json($data, $status);
+        return $this->json(['message' => $message, 'value' => $data], $status);
     }
 
     public function apiResponseError(\Throwable $throwable): JsonResponse

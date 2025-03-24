@@ -11,6 +11,7 @@ use App\Repository\TaskRepository;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Nelmio\ApiDocBundle\Attribute\Model;
+use Nelmio\ApiDocBundle\Attribute\Security;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,10 +34,19 @@ final class TaskController extends BaseApiController
         response: 200,
         description: 'Returns the list of tasks'
     )]
+    #[OA\Parameter(
+        name: 'offset',
+        description: 'Number of items to skip for pagination',
+        in: 'query',
+        required: false,
+        schema: new OA\Schema(type: 'integer', default: 0)
+    )]
     #[OA\Tag(name: 'tasks')]
-    public function index(): JsonResponse
+    #[Security(name: 'Bearer')]
+    public function index(Request $request): JsonResponse
     {
-        $tasks = $this->taskRepository->getAllTasks();
+        $offset = max(0, $request->query->getInt('offset', 0));
+        $tasks = $this->taskRepository->getTasksPaginator($offset);
 
         return $this->apiResponse($tasks);
     }
@@ -56,6 +66,7 @@ final class TaskController extends BaseApiController
             }
 
             $task->setTitle($request->title);
+            $task->setStatus($request->newStatus);
 
             $this->entityManager->persist($task);
             $this->entityManager->flush();
@@ -117,14 +128,7 @@ final class TaskController extends BaseApiController
     public function deleteTask(int $id): JsonResponse
     {
         try {
-            $task = $this->entityManager->getRepository(Task::class)->find($id);
-
-            if (!$task) {
-                throw new EntityNotFoundException();
-            }
-
-            $this->entityManager->remove($task);
-            $this->entityManager->flush();
+            $this->taskRepository->deleteTask($id);
 
             return $this->apiResponse([], Response::HTTP_NO_CONTENT);
         } catch (\Throwable $throwable) {
