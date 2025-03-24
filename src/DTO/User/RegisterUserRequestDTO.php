@@ -1,14 +1,18 @@
 <?php
 
-namespace App\DTO\Task;
+namespace App\DTO\User;
 use Symfony\Component\Validator\Constraints as Assert;
 
-class CreateTaskDTO
+class RegisterUserRequestDTO
 {
     public function __construct(
         #[Assert\NotBlank]
         #[Assert\Type('string')]
-        public string $title
+        public string $email,
+
+        #[Assert\NotBlank]
+        #[Assert\Type('string')]
+        public string $password
     )
     {
 

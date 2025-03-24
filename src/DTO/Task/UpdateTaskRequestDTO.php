@@ -7,7 +7,7 @@ use App\Enum\TaskStatusEnum;
 use Symfony\Component\Validator\Constraints as Assert;
 use App\DTO\BaseDTO;
 
-class UpdateTaskDTO extends BaseDTO
+class UpdateTaskRequestDTO extends BaseDTO
 {
     public function __construct(
         #[Assert\NotBlank]

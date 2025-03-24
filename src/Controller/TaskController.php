@@ -2,8 +2,8 @@
 
 namespace App\Controller;
 
-use App\DTO\Task\CreateTaskDTO;
-use App\DTO\Task\UpdateTaskDTO;
+use App\DTO\Task\CreateTaskRequestDTO;
+use App\DTO\Task\UpdateTaskRequestDTO;
 use App\Entity\Task;
 use App\Enum\TaskStatusEnum;
 use App\Exceptions\EntityNotFoundException;
@@ -54,9 +54,9 @@ final class TaskController extends BaseApiController
     #[Route('/api/tasks/{id}', name: 'update_task', methods: ['PATCH'])]
     #[OA\Tag(name: 'tasks')]
     #[OA\RequestBody(
-        content: new Model(type: UpdateTaskDTO::class)
+        content: new Model(type: UpdateTaskRequestDTO::class)
     )]
-    public function updateTask(#[MapRequestPayload] UpdateTaskDTO $request, int $id): JsonResponse
+    public function updateTask(#[MapRequestPayload] UpdateTaskRequestDTO $request, int $id): JsonResponse
     {
         try {
             $task = $this->entityManager->getRepository(Task::class)->find($id);
@@ -100,10 +100,10 @@ final class TaskController extends BaseApiController
 
     #[Route('/api/tasks', name: 'create_task', methods: ['POST'])]
     #[OA\RequestBody(
-        content: new Model(type: CreateTaskDTO::class)
+        content: new Model(type: CreateTaskRequestDTO::class)
     )]
     #[OA\Tag(name: 'tasks')]
-    public function createTask(#[MapRequestPayload] CreateTaskDTO $request): JsonResponse
+    public function createTask(#[MapRequestPayload] CreateTaskRequestDTO $request): JsonResponse
     {
         try {
             $task = new Task();
