@@ -20,5 +20,6 @@ nelmio_api_doc:
     areas: # to filter documented areas
         path_patterns:
             - ^/api(?!/doc$) # Accepts routes under /api except /api/doc
+            - ^/auth
     # Add this formats configuration
     # Add formats configuration

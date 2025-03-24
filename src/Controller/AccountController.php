@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\DTO\Task\CreateTaskRequestDTO;
 use App\DTO\User\RegisterUserRequestDTO;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
@@ -28,7 +27,7 @@ class AccountController extends BaseApiController
     #[OA\RequestBody(
         content: new Model(type: RegisterUserRequestDTO::class)
     )]
-    #[OA\Tag(name: 'tasks')]
+    #[OA\Tag(name: 'auth')]
     public function register(#[MapRequestPayload] RegisterUserRequestDTO $requestDTO): JsonResponse
     {
         $user = new User();
